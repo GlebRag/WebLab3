@@ -1,8 +1,210 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@using WebLab3.Models.Product
+@model List<ProductViewModel>
+
+@{
+    // Получаем из ViewBag информацию о текущей сортировке
+    string currentSort = ViewBag.CurrentSort as string ?? "";
+    string currentDir = ViewBag.CurrentDir as string ?? "asc";
+
+    // Функция для расчета следующего направления сортировки для заданного столбца
+    Func<string, string> nextDirection = column =>
+    {
+        // Если текущий столбец совпадает, переключаем направление
+        if (currentSort.Equals(column, StringComparison.OrdinalIgnoreCase))
+        {
+            return currentDir == "asc" ? "desc" : "asc";
+        }
+        // Для нового столбца всегда начинаем с ASC
+        return "asc";
+    };
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<style>
+    /* Основные стили для таблицы */
+    .tableBook {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        font-family: Arial, sans-serif;
+        background-color: #f8f8f8;
+    }
+
+        .tableBook th, .tableBook td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .tableBook th {
+            background-color: #ffa726;
+            color: white;
+            font-weight: bold;
+        }
+    /* Стили для строки поиска */
+    .search-section {
+        margin-bottom: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .search-input {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 16px;
+    }
+
+    .search-button {
+        background-color: #ff9800;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 16px;
+    }
+
+        .search-button:hover {
+            background-color: #e68900;
+        }
+    /* Кнопки действий */
+    .action-icon img {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+    /* Стили для кнопки "Добавить пластинку" */
+    .creation-order a {
+        display: inline-block;
+        background-color: #ffcc80;
+        color: #333;
+        padding: 20px 25px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: bold;
+        margin: 5px;
+    }
+
+        .creation-order a:hover {
+            background-color: #ffa726;
+        }
+</style>
+
+<div class="tableBody">
+    <div class="search-section">
+        <form id="searchForm" method="post" action="/Home/Search" class="search-form">
+            <input type="text" name="name" placeholder="Введите название" class="search-input" id="Name" />
+            <input type="text" name="manufacturer" placeholder="Введите производителя" class="search-input" id="Manufacturer" />
+            <input type="text" name="barcode" placeholder="Введите штрихкод" class="search-input" id="Barcode" />
+            <!-- Поля для цены изменены на text с поддержкой десятичного ввода -->
+            <input type="text" name="purchasePrice" placeholder="Введите цену за шт." class="search-input" id="PurchasePrice"
+                   pattern="^\d+(,\d{1,2})?$" inputmode="decimal">
+            <input type="text" name="totalPrice" placeholder="Введите итоговую цену" class="search-input" id="TotalPrice"
+                   pattern="^\d+(,\d{1,2})?$" inputmode="decimal">
+            <input type="number" name="count" placeholder="Введите количество" class="search-input" id="Count" />
+            <button type="submit" class="search-button">Найти</button>
+        </form>
+    </div>
+    <div class="creation-order">
+        <a class="text-neutral-950 hover:text-orange-500 py-2 px-4 rounded-md bg-orange-200" href="/Home/CreateProduct">Добавить товар</a>
+    </div>
+    <div class="creation-order">
+        <a class="text-neutral-950 hover:text-orange-500 py-2 px-4 rounded-md bg-orange-200" href="/Home/Create50Product">Создать 50 товаров</a>
+    </div>
+    <table class="tableBook">
+        <thead>
+            <tr>
+                <th>
+                    <a href="/Home/Index?sort=name&dir=@nextDirection("name")" style="color:white; text-decoration: none;">
+                        Название товара
+                        @(currentSort.Equals("name", StringComparison.OrdinalIgnoreCase)
+                            ? (currentDir == "asc" ? "▲" : "▼")
+                            : "")
+                    </a>
+                </th>
+                <th>
+                    <a href="/Home/Index?sort=manufacturer&dir=@nextDirection("manufacturer")" style="color:white; text-decoration: none;">
+                        Производитель
+                        @(currentSort.Equals("manufacturer", StringComparison.OrdinalIgnoreCase)
+                            ? (currentDir == "asc" ? "▲" : "▼")
+                            : "")
+                    </a>
+                </th>
+                <th>
+                    <a href="/Home/Index?sort=barcode&dir=@nextDirection("barcode")" style="color:white; text-decoration: none;">
+                        ШтрихКод
+                        @(currentSort.Equals("barcode", StringComparison.OrdinalIgnoreCase)
+                            ? (currentDir == "asc" ? "▲" : "▼")
+                            : "")
+                    </a>
+                </th>
+                <th>
+                    <a href="/Home/Index?sort=purchaseprice&dir=@nextDirection("purchaseprice")" style="color:white; text-decoration: none;">
+                        Цена закупки
+                        @(currentSort.Equals("purchaseprice", StringComparison.OrdinalIgnoreCase)
+                            ? (currentDir == "asc" ? "▲" : "▼")
+                            : "")
+                    </a>
+                </th>
+                <th>
+                    <a href="/Home/Index?sort=count&dir=@nextDirection("count")" style="color:white; text-decoration: none;">
+                        Количество
+                        @(currentSort.Equals("count", StringComparison.OrdinalIgnoreCase)
+                            ? (currentDir == "asc" ? "▲" : "▼")
+                            : "")
+                    </a>
+                </th>
+                <th>
+                    <a href="/Home/Index?sort=totalprice&dir=@nextDirection("totalprice")" style="color:white; text-decoration: none;">
+                        Общая цена закупки
+                        @(currentSort.Equals("totalprice", StringComparison.OrdinalIgnoreCase)
+                            ? (currentDir == "asc" ? "▲" : "▼")
+                            : "")
+                    </a>
+                </th>
+                <th>Изменить</th>
+                <th>Удалить</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in Model)
+            {
+                <tr>
+                    <td>@product.Name</td>
+                    <td>@product.Manufacturer</td>
+                    <td>@product.Barcode</td>
+                    <td>@product.PurchasePrice</td>
+                    <td>@product.Count</td>
+                    <td>@product.TotalPrice</td>
+                    <td>
+                        <a href="/Home/EditProduct?productId=@product.Id" class="action-icon">
+                            <img src="/images/edit-icon.png" alt="Изменить" />
+                        </a>
+                    </td>
+                    <td>
+                        <a href="#" class="action-icon" onclick="confirmDelete('/Home/DeleteProduct?productId=@product.Id')">
+                            <img src="/images/delete-icon.png" alt="Удалить" />
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>
+
+<script>
+    // Обработчик события отправки формы поиска (для полей, поддерживающих десятичные значения)
+    document.getElementById("searchForm").addEventListener("submit", function () {
+        let purchasePriceInput = document.getElementById("PurchasePrice");
+        purchasePriceInput.value = purchasePriceInput.value.replace(/\./g, ",");
+        let totalPriceInput = document.getElementById("TotalPrice");
+        totalPriceInput.value = totalPriceInput.value.replace(/\./g, ",");
+    });
+
+    function confirmDelete(url) {
+        if (confirm("Вы уверены, что хотите удалить?")) {
+            window.location.href = url;
+        }
+    }
+</script>

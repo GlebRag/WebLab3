@@ -1,0 +1,107 @@
+﻿@model WebLab3.Models.Product.ProductEditViewModel
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+
+        .container {
+            margin-block: 45px;
+            max-width: 600px;
+            max-height: 100%;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+            .form-group label {
+                margin-bottom: 5px;
+            }
+
+            .form-group input {
+                padding: 8px;
+                font-size: 16px;
+            }
+
+            .form-group img {
+                max-width: 100%;
+                margin-top: 10px;
+                border: 1px solid #ccc;
+            }
+
+        .submit-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+            .submit-btn:hover {
+                background-color: #45a049;
+            }
+    </style>
+</head>
+<body class="creationbook">
+    <div class="container">
+        <form action="/Home/EditProduct" method="post" onsubmit="return confirmAction()">
+            <div class="form-group">
+                <label for="Name">Название:</label>
+                <input type="text" id="Name" name="Name" placeholder="Введите название" value="@Model.Name">
+                @Html.ValidationMessageFor(x => x.Name)
+            </div>
+            <div class="form-group">
+                <label for="Manufacturer">Производитель:</label>
+                <input type="text" id="Manufacturer" name="Manufacturer" placeholder="Введите производителя" value="@Model.Manufacturer">
+                @Html.ValidationMessageFor(x => x.Manufacturer)
+            </div>
+            <div class="form-group">
+                <label for="Barcode">ШтрихКод:</label>
+                <input type="text" id="Barcode" name="Barcode" placeholder="Введите штрихкод" value="@Model.Barcode">
+                @Html.ValidationMessageFor(x => x.Barcode)
+            </div>
+            <div class="form-group">
+                <label for="PurchasePrice">Цена за шт. (Например 10,10):</label>
+                <!-- Используем input type="text" с pattern и inputmode для поддержки десятичных значений с запятой -->
+                <input type="text" id="PurchasePrice" name="PurchasePrice" placeholder="Введите цену за шт."
+                       pattern="^\d+(,\d{1,2})?$" inputmode="decimal" value="@Model.PurchasePrice">
+                @Html.ValidationMessageFor(x => x.PurchasePrice)
+            </div>
+            <div class="form-group">
+                <label for="Count">Количество:</label>
+                <input type="number" id="Count" name="Count" placeholder="Введите количество" value="@Model.Count">
+                @Html.ValidationMessageFor(x => x.Count)
+            </div>
+            <input type="hidden" id="@Model.Id" name="Id" value="@Model.Id">
+            <button type="submit" id="submitBtn" class="submit-btn">Изменить товар</button>
+        </form>
+    </div>
+
+</body>
+
+<script>
+    function confirmAction() {
+        const confirmation = confirm("Вы уверены, что хотите внести изменения?");
+        return confirmation; // Если пользователь нажимает "Изменить", форма отправляется; если "Отмена", отправка прерывается
+    }
+</script>
+
+<script>
+    // Функция открывает popup без использования rel="noopener", чтобы window.opener был доступен
+    function openAuthorPopup(url) {
+        window.open(url, '_blank', 'width=1000,height=1000,resizable=yes');
+    }
+    function openPublisherPopup(url) {
+        window.open(url, '_blank', 'width=1000,height=1000,resizable=yes');
+    }
+</script>

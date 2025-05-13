@@ -1,7 +1,18 @@
+using WebLab3.Data.Repositories;
+using Microsoft.EntityFrameworkCore;
+using WebLab3.Data;
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddDbContext<WebDbContext>(x => x.UseSqlServer(WebDbContext.CONNECTION_STRING));
+
+builder.Services.AddScoped<IProductRepositoryReal, ProductRepository>();
+
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
