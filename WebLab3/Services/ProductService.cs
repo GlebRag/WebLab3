@@ -1,16 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Diagnostics;
-using System.IO;
-using WebLab3.Data;
-using WebLab3.Data.Models;
+﻿using WebLab3.Data.Models;
 using WebLab3.Data.Repositories;
-using WebLab3.Models;
+using WebLab3.Data;
 using WebLab3.Models.Product;
-using WebLab3.Services;
+using WebLab3.Data.Interfaces.Models;
+using Microsoft.AspNetCore.Mvc;
 
-namespace WebLab3.Controllers
+namespace WebLab3.Services
 {
     public class ProductService : IProductService
     {
@@ -27,50 +22,64 @@ namespace WebLab3.Controllers
             _random = new Random();
         }
 
-        public async Task<IEnumerable<ProductData>> GetAllProductsAsync(string sort, string dir)
+        public async Task<List<ProductViewModel>> GetAllProductsAsync(string sort, string dir)
         {
-            var products = _productRepository.GetAll();
+            var productData = _productRepository.GetAll();
 
             // Сортировка на основе переданных параметров
             switch (sort.ToLower())
             {
                 case "name":
-                    products = (dir.ToLower() == "asc")
-                        ? products.OrderBy(p => p.Name)
-                        : products.OrderByDescending(p => p.Name);
+                    productData = (dir.ToLower() == "asc")
+                        ? productData.OrderBy(v => v.Name)
+                        : productData.OrderByDescending(v => v.Name);
                     break;
-                case "executor":
-                    products = (dir.ToLower() == "asc")
-                        ? products.OrderBy(p => p.Manufacturer)
-                        : products.OrderByDescending(p => p.Manufacturer);
+                case "manufacturer":
+                    productData = (dir.ToLower() == "asc")
+                        ? productData.OrderBy(v => v.Manufacturer)
+                        : productData.OrderByDescending(v => v.Manufacturer);
                     break;
-                case "genre":
-                    products = (dir.ToLower() == "asc")
-                        ? products.OrderBy(p => p.Barcode)
-                        : products.OrderByDescending(p => p.Barcode);
+                case "barcode":
+                    productData = (dir.ToLower() == "asc")
+                        ? productData.OrderBy(v => v.Barcode)
+                        : productData.OrderByDescending(v => v.Barcode);
                     break;
                 case "purchaseprice":
-                    products = (dir.ToLower() == "asc")
-                        ? products.OrderBy(p => p.PurchasePrice)
-                        : products.OrderByDescending(p => p.PurchasePrice);
+                    productData = (dir.ToLower() == "asc")
+                        ? productData.OrderBy(v => v.PurchasePrice)
+                        : productData.OrderByDescending(v => v.PurchasePrice);
                     break;
                 case "count":
-                    products = (dir.ToLower() == "asc")
-                        ? products.OrderBy(p => p.Count)
-                        : products.OrderByDescending(p => p.Count);
+                    productData = (dir.ToLower() == "asc")
+                        ? productData.OrderBy(v => v.Count)
+                        : productData.OrderByDescending(v => v.Count);
                     break;
                 case "totalprice":
-                    products = (dir.ToLower() == "asc")
-                        ? products.OrderBy(p => p.PurchasePrice * p.Count)
-                        : products.OrderByDescending(p => p.PurchasePrice * p.Count);
+                    productData = (dir.ToLower() == "asc")
+                        ? productData.OrderBy(v => v.PurchasePrice * v.Count)
+                        : productData.OrderByDescending(v => v.PurchasePrice * v.Count);
                     break;
                 default:
-                    _logger.LogWarning("Неизвестное поле сортировки {Sort}. Используем сортировку по умолчанию (name)", sort);
-                    products = products.OrderBy(p => p.Name);
+                    productData = productData.OrderBy(v => v.Name);
                     break;
             }
-            return await Task.FromResult(products);
+
+            var model = productData.Select(v => new ProductViewModel
+            {
+                Id = v.Id,
+                Name = v.Name,
+                Manufacturer = v.Manufacturer,
+                Barcode = v.Barcode,
+                PurchasePrice = v.PurchasePrice,
+                Count = v.Count,
+                TotalPrice = v.PurchasePrice * v.Count
+            }).ToList();
+
+
+
+            return await Task.FromResult(model);
         }
+
 
         public async Task CreateProductAsync(ProductCreationViewModel viewModel)
         {
@@ -118,12 +127,6 @@ namespace WebLab3.Controllers
             await Task.CompletedTask;
         }
 
-        public async Task<IEnumerable<ProductData>> SearchProductsAsync(string name, string manufacturer, string barcode, decimal? purchasePrice, int? count)
-        {
-            // Преобразуем purchasePrice и count в строку или 0, если они не заданы
-            var result = _productRepository.Search(name, manufacturer, barcode, purchasePrice?.ToString(), null, count ?? 0);
-            return await Task.FromResult(result);
-        }
 
         public async Task Create50RandomProductsAsync()
         {
@@ -163,6 +166,28 @@ namespace WebLab3.Controllers
             }
             _logger.LogInformation("50 случайных продуктов созданы");
             await Task.CompletedTask;
+        }
+        public async Task<List<ProductViewModel>> SearchProductsAsync(string name, string manufacturer, string barcode, string purchasePrice, string totalPrice, int count)
+        {
+
+            var viewModels = _productRepository
+                .Search(name, manufacturer, barcode, purchasePrice, totalPrice, count)
+                .Select(dbBook =>
+                {
+                    return new ProductViewModel
+                    {
+                        Id = dbBook.Id,
+                        Name = dbBook.Name,
+                        Manufacturer = dbBook.Manufacturer,
+                        Barcode = dbBook.Barcode,
+                        PurchasePrice = dbBook.PurchasePrice,
+                        Count = dbBook.Count,
+                        TotalPrice = dbBook.PurchasePrice * dbBook.Count
+                    };
+                })
+                .ToList();
+
+            return await Task.FromResult(viewModels);
         }
     }
 }
